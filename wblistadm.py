@@ -7,7 +7,13 @@
 
 # Usage:
 #
-#   # python blacklist_ip.py x.x.x.x y.y.y.y user@domain.com @test.com @.example.com
+#   *) Add global white/blacklists
+#
+#       # python wblistadm.py xx.xx.xx.xx user@domain.com @test.com @.example.com
+#
+#   *) TODO: Add per-domain white/blacklists
+#   *) TODO: Add per-user white/blacklists
+#   *) TODO: list account (global, per-domain, per-user) wblist
 
 import os
 import sys

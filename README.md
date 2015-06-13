@@ -12,7 +12,7 @@ Requires the following python modules:
 Copy iRedAdmin config file `settings.py` to this directory, then run:
 
 ```python
-# python wblistadm ...
+# python wblistadm.py ...
 ```
 
 # Available arguments
