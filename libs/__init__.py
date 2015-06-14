@@ -184,7 +184,7 @@ def get_db_conn(db):
 
     try:
         conn = web.database(dbn=sql_dbn,
-                            host=settings.__dict__[db + '_db_host'],
+                            host=settings.__dict__[db + '_db_server'],
                             port=int(settings.__dict__[db + '_db_port']),
                             db=settings.__dict__[db + '_db_name'],
                             user=settings.__dict__[db + '_db_user'],
