@@ -28,6 +28,9 @@ web.config.debug = False
 
 USAGE = """Usage:
 
+    wblistadm [option]
+    
+    Options:
     -b | --blacklist sender
         Blacklist specified sender. Multiple senders must be separated by a space
         and the entire list must be enclosed in " or '.
