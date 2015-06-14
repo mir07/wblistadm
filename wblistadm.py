@@ -1,4 +1,5 @@
 # Author: Zhang Huangbin <zhb@iredmail.org>
+# Author: Michael Rasmussen <mir@datanom.net>
 
 # TODO:
 #   - able to remove white/blacklist sender addresses
@@ -112,12 +113,12 @@ def getPriority(address):
     return res
 
 # TODO: list according to blacklist or whitelist
-def list_wb(recipient):
+def list_wb(blacklist, whitelist, recipient):
     global conn
     
-    all = """select u.email as recipient, m.email as sender, w.wb as policy 
-            from users u, mailaddr m, wblist w 
-           where m.id = w.sid and u.id = w.rid
+    all = """select u.email as recipient, m.email as sender, w.wb as policy, 
+            m.priority as priority from users u, mailaddr m, wblist w 
+            where m.id = w.sid and u.id = w.rid
            """
     
     if recipient:
@@ -125,12 +126,21 @@ def list_wb(recipient):
     else:
         sql = all
 
+    if blacklist or whitelist:
+        if blacklist:
+            sql += " and w.wb = 'B'"
+        else:
+            sql += " and w.wb = 'W'"
+
     rows = conn.query(sql)
     if rows:
-        print "%-30s %-30s %s" % ("Recipient","Sender","Policy")
-        print "%s %s %s" % ("------------------------------","------------------------------","------")
+        print "%-30s %-30s %s %s" % ("Recipient","Sender","Policy", "Priority")
+        print "%s %s %s %s" % ("------------------------------","------------------------------","------","--------")
         for row in rows:
-            print "%-30s %-30s %-6s" % (row.recipient, row.sender, row.policy)
+            print "%-30s %-30s %+6s %+8s" % (row.recipient, row.sender, row.policy, row.priority)
+        print "\nFound %d instances." % len(rows)
+    else:
+        print "Nothing to list"
 
 def delete_wb(blacklist,  whitelist,  recipient):
     global conn
@@ -249,7 +259,7 @@ def main():
         print "Error: list and delete is mutual exclusive"
         print USAGE
         sys.exit(1)
-    if (blacklist or whitelist):
+    if (blacklist or whitelist) and not list:
         if args:
             a = args[0].split()
             s = set(a)
@@ -278,7 +288,7 @@ def main():
 
     try:
         if list:
-            list_wb(recipient)
+            list_wb(blacklist, whitelist, recipient)
         elif delete:
             delete_wb(blacklist, whitelist, recipient)
         else:
