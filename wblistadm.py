@@ -3,18 +3,13 @@
 
 # TODO:
 #   - able to remove white/blacklist sender addresses
-#   - able to specify recipient
-#   - able to list all white/blacklists
 
 # Usage:
 #
-#   *) Add global white/blacklists
+#   *) Add white/blacklists global, per-domain, or per-user
 #
-#       # python wblistadm.py xx.xx.xx.xx user@domain.com @test.com @.example.com
+#       # python wblistadm.py --recipient=user@domain.com --blacklist '@test.com @.example.com'
 #
-#   *) TODO: Add per-domain white/blacklists
-#   *) TODO: Add per-user white/blacklists
-#   *) TODO: list account (global, per-domain, per-user) wblist
 
 import os
 import sys
@@ -112,7 +107,6 @@ def getPriority(address):
     
     return res
 
-# TODO: list according to blacklist or whitelist
 def list_wb(blacklist, whitelist, recipient):
     global conn
     
