@@ -161,7 +161,109 @@ def list_wb(blacklist, whitelist, recipient):
 
 def delete_wb(blacklist,  whitelist,  recipient):
     global conn
-    pass
+
+    try:
+        t = conn.transaction()
+    except:
+        raise
+
+    if not checkRecipient(recipient):
+        print "%s: Unknown recipient"
+        sys.exit(1)
+
+    user_priority = getPriority(recipient)
+    if not user_priority:
+        print "Error: Could not determine address"
+        sys.exit(1)
+
+    rid = None
+    try:
+        # The mysql driver in webpy.db crashes if any exceptions is raised
+        where = "email='%s'" % user_priority['email']
+        row = conn.select('users', where=where)
+        if row:
+            rid = int(row[0].id)
+        if not rid:
+            print "Error: Recipient does not exist"
+            sys.exit(1)
+    except:
+        t.rollback()
+        raise
+
+    if blacklist:
+        """Blacklist"""
+        try:
+            for b in blacklist:
+                sid = None
+                priority = getPriority(b)
+                if not priority:
+                    msg = "%s: Could not determine priority" % b
+                    logging.warning(msg)
+                    continue
+                # The mysql driver in webpy.db crashes if any exceptions is raised
+                where = "email='%s'" % priority['email']
+                row = conn.select('mailaddr', where=where)
+                if row:
+                    sid = int(row[0].id)
+                else:
+                    msg = "%s: Does not exists" % priority['email']
+                    logging.warning(msg)
+                    continue
+
+                where = "rid=%d and sid=%d and wb='B'" % (rid,  sid)
+                n = int(conn.delete('wblist', where=where))
+                if n:
+                    where = "email='%s'" % priority['email']
+                    n = int(conn.delete('mailaddr', where=where))
+                else:
+                    msg = "%s: No blacklist" % priority['email']
+                    logging.warning(msg)
+                    continue
+                if not n:
+                    msg = "%s: Missing relation" % priority['email']
+                    logging.error(msg)
+                    raise Exception(msg)
+            t.commit()
+        except:
+            t.rollback()
+            raise
+    else:
+        """Whitelist"""
+        try:
+            for w in whitelist:
+                sid = None
+                priority = getPriority(w)
+                if not priority:
+                    msg = "%s: Could not determine priority" % w
+                    logging.warning(msg)
+                    continue
+                # The mysql driver in webpy.db crashes if any exceptions is raised
+                where = "email='%s'" % priority['email']
+                row = conn.select('mailaddr', where=where)
+                if row:
+                    sid = int(row[0].id)
+                else:
+                    msg = "%s: Does not exists" % priority['email']
+                    logging.warning(msg)
+                    continue
+                    
+                where = "rid=%d and sid=%d and wb='W'" % (rid,  sid)
+                n = int(conn.delete('wblist', where=where))
+                if n:
+                    n = int(conn.delete('mailaddr', where="email=" + priority['email']))
+                else:
+                    msg = "%s: No whitelist" % priority['email']
+                    logging.warning(msg)
+                    continue
+                if not n:
+                    msg = "%s: Missing relation" % priority['email']
+                    logging.error(msg)
+                    raise Exception(msg)
+        except:
+            t.rollback()
+            raise
+        else:
+            t.commit()
 
 def add_wb(blacklist,  whitelist,  recipient):
     global conn
@@ -199,6 +301,10 @@ def add_wb(blacklist,  whitelist,  recipient):
             for b in blacklist:
                 sid = None
                 priority = getPriority(b)
+                if not priority:
+                    msg = "%s: Could not determine priority" % b
+                    logging.warning(msg)
+                    continue
                 # The mysql driver in webpy.db crashes if any exceptions is raised
                 where = "email='%s'" % priority['email']
                 row = conn.select('mailaddr', where=where)
@@ -218,6 +324,10 @@ def add_wb(blacklist,  whitelist,  recipient):
             for w in whitelist:
                 sid = None
                 priority = getPriority(w)
+                if not priority:
+                    msg = "%s: Could not determine priority" % w
+                    logging.warning(msg)
+                    continue
                 # The mysql driver in webpy.db crashes if any exceptions is raised
                 where = "email='%s'" % priority['email']
                 row = conn.select('mailaddr', where=where)
@@ -310,7 +420,11 @@ def main():
         if list:
             list_wb(blacklist, whitelist, recipient)
         elif delete:
-            delete_wb(blacklist, whitelist, recipient)
+            if blacklist or whitelist:
+                delete_wb(blacklist, whitelist, recipient)
+            else:
+                print "blacklist and whitelist cannot be empty"
+                sys.exit(1)
         else:
             if blacklist or whitelist:
                 add_wb(blacklist, whitelist, recipient)
