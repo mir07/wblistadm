@@ -82,6 +82,13 @@ MAILADDR_PRIORITIES = {
     'catchall': 0,
 }
 
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
 def checkRecipient(recipient):
     """Do we serve mail for user or domain"""
     we_serve = False
@@ -102,13 +109,25 @@ def checkRecipient(recipient):
 
 def getPriority(address):
     res = {}
-    if not address:
-        res['priority'] = MAILADDR_PRIORITIES['catchall']
-        res['email'] = '@.'
-    else:
-        res['priority'] = MAILADDR_PRIORITIES[is_valid_amavisd_address(address)]
-        res['email'] = address
     
+    try:
+        if not address:
+            res['priority'] = MAILADDR_PRIORITIES['catchall']
+            res['email'] = '@.'
+        else:
+            res['priority'] = MAILADDR_PRIORITIES[is_valid_amavisd_address(address)]
+            res['email'] = address
+    except KeyError,  e:
+        print str(e)
+        res = {}
+    
+    try:
+        if (not res['priority'] and not is_int(res['priority'])) or not res['email']:
+            res = {}
+    except KeyError, e:
+        print str(e)
+        res = {}
+        
     return res
 
 def list_wb(blacklist, whitelist, recipient):
@@ -157,6 +176,9 @@ def add_wb(blacklist,  whitelist,  recipient):
         sys.exit(1)
 
     user_priority = getPriority(recipient)
+    if not user_priority:
+        print "Error: Could not determine priority"
+        sys.exit(1)
 
     rid = None
     try:
