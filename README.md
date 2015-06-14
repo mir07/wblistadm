@@ -35,4 +35,5 @@ Copy iRedAdmin config file `settings.py` to this directory, then run:
         and the entire list must be enclosed in " or '.
     
     blacklist and whitelist option is mutual exclusive.
+    Unless option delete or list is present the implied action is add.
 

@@ -48,6 +48,7 @@ USAGE = """Usage:
         and the entire list must be enclosed in " or '.
     
     blacklist and whitelist option is mutual exclusive.
+    Unless option delete or list is present the implied action is add.
 """
 
 logging.basicConfig(level=logging.INFO,
