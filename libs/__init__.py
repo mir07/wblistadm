@@ -183,12 +183,20 @@ def get_db_conn(db):
         sql_dbn = 'mysql'
 
     try:
-        conn = web.database(dbn=sql_dbn,
-                            host=settings.__dict__[db + '_db_server'],
-                            port=int(settings.__dict__[db + '_db_port']),
-                            db=settings.__dict__[db + '_db_name'],
-                            user=settings.__dict__[db + '_db_user'],
-                            pw=settings.__dict__[db + '_db_password'])
+        if db == 'vmail':
+            conn = web.database(dbn=sql_dbn,
+                                host=settings.__dict__['sql_server'],
+                                port=int(settings.__dict__['sql_port']),
+                                db=settings.__dict__['sql_db'],
+                                user=settings.__dict__['sql_user'],
+                                pw=settings.__dict__['sql_password'])
+        else:
+            conn = web.database(dbn=sql_dbn,
+                                host=settings.__dict__[db + '_db_server'],
+                                port=int(settings.__dict__[db + '_db_port']),
+                                db=settings.__dict__[db + '_db_name'],
+                                user=settings.__dict__[db + '_db_user'],
+                                pw=settings.__dict__[db + '_db_password'])
 
         conn.supports_multiple_insert = True
         return conn
