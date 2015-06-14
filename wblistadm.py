@@ -111,6 +111,7 @@ def getPriority(address):
     
     return res
 
+# TODO: list according to blacklist or whitelist
 def list_wb(recipient):
     global conn
     
@@ -159,6 +160,7 @@ def add_wb(blacklist,  whitelist,  recipient):
         if not rid:
             rid = int(conn.insert('users', email=user_priority['email'], priority=int(user_priority['priority'])))
     except:
+        t.rollback()
         raise
 
     if blacklist:
@@ -250,12 +252,20 @@ def main():
     if (blacklist or whitelist):
         if args:
             a = args[0].split()
+            s = set(a)
             if blacklist:
                 blacklist = [v for v in a if is_valid_amavisd_address(v)]
+                bad = [x for x in s if x not in blacklist]
             else:
                 whitelist = [v for v in a if is_valid_amavisd_address(v)]
+                bad = [x for x in s if x not in whitelist]
+            if bad:
+                s = "Skipping: %s" % ' '.join(bad)
+                logging.warning(s)
+                print "Warning: %s" % s
         else:
             print "Error: whitelist or blacklist needs arguments"
+            print USAGE
             sys.exit(1)
 
     #print blacklist, whitelist, delete, list, recipient
