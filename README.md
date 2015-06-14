@@ -27,7 +27,7 @@ Copy iRedAdmin config file `settings.py` to this directory, then run:
         Show this help
     -l | --list
         If recipient is listed only list for this recipient.
-	If neither blacklist nor whitelist is present show all.
+        If neither blacklist nor whitelist is present show all.
     -r | --recipient
         Recipient can be global, domain, or user.
         If recipient is not listed recipient will be global.
