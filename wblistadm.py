@@ -16,13 +16,14 @@ import sys
 import web
 import logging
 import getopt
+import settings
 
 os.environ['LC_ALL'] = 'C'
 
 rootdir = os.path.abspath(os.path.dirname(__file__)) + '/../'
 sys.path.insert(0, rootdir)
 
-from libs import is_valid_amavisd_address, get_db_conn
+from libs import is_valid_amavisd_address, get_db_conn, MAILADDR_PRIORITIES
 
 web.config.debug = False
 
@@ -57,32 +58,6 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 conn = None
 
-# Priority used in SQL table "amavisd.mailaddr". 0 is the lowest priority.
-# Reference: http://www.amavis.org/README.lookups.txt
-#
-# The following order (implemented by sorting on the 'priority' field
-# in DESCending order, zero is low priority) is recommended, to follow
-# the same specific-to-general principle as in other lookup tables;
-#   9 - lookup for user+foo@sub.example.com
-#   8 - lookup for user@sub.example.com (only if $recipient_delimiter is '+')
-#   7 - lookup for user+foo (only if domain part is local)
-#   6 - lookup for user     (only local; only if $recipient_delimiter is '+')
-#   5 - lookup for @sub.example.com
-#   3 - lookup for @.sub.example.com
-#   2 - lookup for @.example.com
-#   1 - lookup for @.com
-#   0 - lookup for @.       (catchall)
-MAILADDR_PRIORITIES = {
-    'ip': 10,
-    'email': 8,
-    'wildcard_addr': 6,     # r'user@*'. used in iRedAPD plugin `amavisd_wblist`
-                            # as wildcard sender. e.g. 'user@*'
-    'domain': 5,
-    'subdomain': 3,
-    'top_level_domain': 1,
-    'catchall': 0,
-}
-
 def is_int(s):
     try:
         int(s)
@@ -102,7 +77,37 @@ def checkRecipient(recipient):
                 ldap.mailbox
                 ldap.domain
         """
-        we_serve = True
+        addr = is_valid_amavisd_address(recipient)
+        if addr in ['subdomain', 'domain', 'top_level_domain']:
+            validate = 'domain'
+        elif addr == 'email':
+            validate = 'email'
+        else:
+            validate = None
+        
+        if validate:
+            if settings.backend == 'ldap':
+                adm_con = get_db_conn('ldap')
+                if not adm_con:
+                    we_serve = False
+                else:
+                    we_serve = True
+            else:
+                adm_con = get_db_conn('vmail')
+                if adm_con:
+                    if validate == 'email':
+                        domain = recipient.split('@')[1]
+                        user_where = "username='%s' and domain='%s'" % (recipient, domain)
+                        row = adm_con.select('mailbox', where=user_where)
+                        if row:
+                            we_serve = True
+                    else:
+                        domain_where = "domain='%s'" % recipient.split('@')[1]
+                        row = adm_con.select('domain', where=domain_where)
+                        if row:
+                            we_serve = True
+        else:
+            we_serve = True
     else:
         we_serve = True
     
@@ -275,7 +280,7 @@ def add_wb(blacklist,  whitelist,  recipient):
         raise
 
     if not checkRecipient(recipient):
-        print "%s: Unknown recipient"
+        print "%s: Unknown recipient" % recipient
         sys.exit(1)
 
     user_priority = getPriority(recipient)
