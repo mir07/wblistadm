@@ -1,9 +1,6 @@
 # Author: Zhang Huangbin <zhb@iredmail.org>
 # Author: Michael Rasmussen <mir@datanom.net>
 
-# TODO:
-#   - able to remove white/blacklist sender addresses
-
 # Usage:
 #
 #   *) Add white/blacklists global, per-domain, or per-user
@@ -16,6 +13,7 @@ import sys
 import web
 import logging
 import getopt
+import ldap
 import settings
 
 os.environ['LC_ALL'] = 'C'
@@ -88,10 +86,23 @@ def checkRecipient(recipient):
         if validate:
             if settings.backend == 'ldap':
                 adm_con = get_db_conn('ldap')
-                if not adm_con:
-                    we_serve = False
-                else:
-                    we_serve = True
+                if adm_con:
+                    if validate == 'email':
+                        filter = "(&(objectClass=mailUser)(mail=%s))" % recipient
+                        result = adm_con.search_s(settings.ldap_basedn, 
+                                                  ldap.SCOPE_SUBTREE, 
+                                                  filter, 
+                                                  ['mail'])
+                        if result:
+                            we_serve = True
+                    else:
+                        filter =  "(&(objectClass=mailDomain)(domainName=%s))" %  recipient.split('@')[1]
+                        result = adm_con.search_s(settings.ldap_basedn, 
+                                                  ldap.SCOPE_SUBTREE, 
+                                                  filter, 
+                                                  ['domainName'])
+                        if result:
+                            we_serve = True
             else:
                 adm_con = get_db_conn('vmail')
                 if adm_con:
@@ -414,8 +425,6 @@ def main():
             print USAGE
             sys.exit(1)
 
-    #print blacklist, whitelist, delete, list, recipient
-    
     logging.info('Establish SQL connection.')
     conn = get_db_conn('amavisd')
     if not conn:
