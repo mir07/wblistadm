@@ -169,8 +169,8 @@ def is_valid_amavisd_address(addr):
 def get_db_conn(db):
     if db == 'ldap':
         from libs.ldap_auth import verify_bind_dn_pw
-        qr = verify_bind_dn_pw(dn=settings.ldap_bind_dn,
-                               password=settings.ldap_bind_password,
+        qr = verify_bind_dn_pw(dn=settings.ldap_binddn,
+                               password=settings.ldap_bindpw,
                                close_connection=False)
         if qr[0]:
             return qr[1]

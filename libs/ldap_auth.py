@@ -33,7 +33,7 @@ def verify_bind_dn_pw(dn, password, close_connection=True):
 
     try:
         # bind as vmailadmin
-        conn.bind_s(settings.ldap_bind_dn, settings.ldap_bind_password)
+        conn.bind_s(settings.ldap_binddn, settings.ldap_bindpw)
         qr = conn.search_s(dn,
                            ldap.SCOPE_BASE,
                            '(objectClass=*)',
