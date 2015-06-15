@@ -94,15 +94,20 @@ def checkRecipient(recipient):
                                                   filter, 
                                                   ['mail'])
                         if result:
-                            we_serve = True
+                            # just to be absolutely sure
+                            if recipient == result[0][1]['mail'][0]:
+                                we_serve = True
                     else:
-                        filter =  "(&(objectClass=mailDomain)(domainName=%s))" %  recipient.split('@')[1]
+                        domain = recipient.split('@')[1]
+                        filter =  "(&(objectClass=mailDomain)(domainName=%s))" % domain
                         result = adm_con.search_s(settings.ldap_basedn, 
                                                   ldap.SCOPE_SUBTREE, 
                                                   filter, 
                                                   ['domainName'])
                         if result:
-                            we_serve = True
+                            # just to be absolutely sure
+                            if domain == result[0][1]['domainName'][0]:
+                                we_serve = True
             else:
                 adm_con = get_db_conn('vmail')
                 if adm_con:
