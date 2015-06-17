@@ -85,9 +85,7 @@ def checkRecipient(recipient):
                                                   filter, 
                                                   ['mail'])
                         if result:
-                            # just to be absolutely sure
-                            if recipient == result[0][1]['mail'][0]:
-                                we_serve = True
+                            we_serve = True
                     else:
                         domain = recipient.split('@')[1]
                         filter =  "(&(objectClass=mailDomain)(domainName=%s))" % domain
@@ -96,9 +94,7 @@ def checkRecipient(recipient):
                                                   filter, 
                                                   ['domainName'])
                         if result:
-                            # just to be absolutely sure
-                            if domain == result[0][1]['domainName'][0]:
-                                we_serve = True
+                            we_serve = True
             else:
                 adm_con = get_db_conn('vmail')
                 if adm_con:
