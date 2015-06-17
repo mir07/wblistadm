@@ -46,7 +46,7 @@ def getPriority(address):
         res = {}
     
     try:
-        if not res['priority'] or not res['email']:
+        if not 'priority' in res or not 'email' in res:
             res = {}
     except KeyError, e:
         print str(e)
