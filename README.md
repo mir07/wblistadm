@@ -1,12 +1,16 @@
 # wblistadm
-administrate wblist in iRedMail
 
-Requires the following python modules:
+A command line tool used to manage white/blacklists in [iRedMail server](http://www.iredmail.org/).
 
-* psycopg2
-* mysqldb
-* ldap
-* web (webpy)
+# Requirements
+
+Below are required Python modules, if you have a working iRedMail server, they
+are already installed by iRedMail.
+
+* `psycopg2`: required by PostgreSQL backend.
+* `mysqldb`: required by both MySQL and OpenLDAP backend.
+* `ldap`: required by OpenLDAP backend.
+* `webpy`: a simple web framework. [http://webpy.org/](http://webpy.org/)
 
 # How to use
 
