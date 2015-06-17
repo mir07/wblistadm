@@ -25,7 +25,7 @@ web.config.debug = False
 
 os.environ['LC_ALL'] = 'C'
 
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.WARNING,
                     format='* [%(asctime)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 

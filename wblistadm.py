@@ -42,8 +42,6 @@ sys.path.insert(0, rootdir)
 from libs import is_valid_amavisd_address
 from libs.wblistadm_utils import update_wblist, show_wblist
 
-#web.config.debug = False
-
 USAGE = """Usage:
 
     wblistadm [option]
@@ -70,7 +68,7 @@ USAGE = """Usage:
     Unless option delete or list is present the implied action is add.
 """
 
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.WARNING,
                     format='* [%(asctime)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -176,7 +174,7 @@ def main():
             print USAGE
             sys.exit(1)
 
-    logging.info('Establish SQL connection.')
+    logging.info('Excecuting request')
 
     try:
         if show:
