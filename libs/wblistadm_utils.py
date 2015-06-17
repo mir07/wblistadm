@@ -204,7 +204,7 @@ def update_wblist(action, list_type, wblist, recipient = None):
         t.rollback()
         raise
 
-def show_wblist(list_type = None, recipient = None):
+def show_wblist(list_type = None, recipient = None, silent = False):
     all = """select u.email as recipient, m.email as sender, w.wb as policy, 
             m.priority as priority from users u, mailaddr m, wblist w 
             where m.id = w.sid and u.id = w.rid
@@ -228,12 +228,17 @@ def show_wblist(list_type = None, recipient = None):
         
         rows = conn.query(sql)
         if rows:
-            print "%-30s %-30s %s %s" % ("Recipient","Sender","Policy", "Priority")
-            print "%s %s %s %s" % ("------------------------------","------------------------------","------","--------")
+            out = "%-30s %-30s %s %s\n" % ("Recipient","Sender","Policy", "Priority")
+            out += "%s %s %s %s\n" % ("------------------------------","------------------------------","------","--------")
             for row in rows:
-                print "%-30s %-30s %+6s %+8s" % (row.recipient, row.sender, row.policy, row.priority)
-            print "\nFound %d instances." % len(rows)
+                out += "%-30s %-30s %+6s %+8s\n" % (row.recipient, row.sender, row.policy, row.priority)
+            out += "\nFound %d instances." % len(rows)
         else:
-            print "Nothing to show"
+            out = "Nothing to show"
+        
+        if not silent:
+            print out
+        
+        return out
     except:
         raise
