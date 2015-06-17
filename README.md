@@ -29,12 +29,12 @@ Copy iRedAdmin config file `settings.py` to this directory, then run:
         This means remove the blacklist or whitelist.
     -h | --help
         Show this help
-    -l | --list
-        If recipient is listed only list for this recipient.
-        If neither blacklist nor whitelist is present show all.
     -r | --recipient
         Recipient can be global, domain, or user.
         If recipient is not listed recipient will be global.
+    -s | --show
+        If recipient is listed only list for this recipient.
+        If neither blacklist nor whitelist is present show all.
     -w | --whitelist sender
         Whitelist specified sender. Multiple senders must be separated by a space
         and the entire list must be enclosed in " or '.
