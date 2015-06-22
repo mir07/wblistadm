@@ -16,18 +16,10 @@
 # along with Wblistadm.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import ldap
-import settings
 import logging
-import web
-
-web.config.debug = False
+import auth
 
 os.environ['LC_ALL'] = 'C'
-
-logging.basicConfig(level=logging.WARNING,
-                    format='* [%(asctime)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
 
 from libs import is_valid_amavisd_address, get_db_conn, MAILADDR_PRIORITIES
 
@@ -75,40 +67,7 @@ def checkRecipient(recipient):
             validate = None
         
         if validate:
-            if settings.backend == 'ldap':
-                adm_con = get_db_conn('ldap')
-                if adm_con:
-                    if validate == 'email':
-                        filter = "(&(objectClass=mailUser)(mail=%s))" % recipient
-                        result = adm_con.search_s(settings.ldap_basedn, 
-                                                  ldap.SCOPE_SUBTREE, 
-                                                  filter, 
-                                                  ['mail'])
-                        if result:
-                            we_serve = True
-                    else:
-                        domain = recipient.split('@')[1]
-                        filter =  "(&(objectClass=mailDomain)(domainName=%s))" % domain
-                        result = adm_con.search_s(settings.ldap_basedn, 
-                                                  ldap.SCOPE_SUBTREE, 
-                                                  filter, 
-                                                  ['domainName'])
-                        if result:
-                            we_serve = True
-            else:
-                adm_con = get_db_conn('vmail')
-                if adm_con:
-                    if validate == 'email':
-                        domain = recipient.split('@')[1]
-                        user_where = "username='%s' and domain='%s'" % (recipient, domain)
-                        row = adm_con.select('mailbox', where=user_where)
-                        if row:
-                            we_serve = True
-                    else:
-                        domain_where = "domain='%s'" % recipient.split('@')[1]
-                        row = adm_con.select('domain', where=domain_where)
-                        if row:
-                            we_serve = True
+            we_serve = auth.checkUser(validate, recipient)
         else:
             we_serve = True
     else:
@@ -223,18 +182,29 @@ def show_wblist(list_type = None, recipient = None, silent = False):
         conn = get_db_conn('amavisd')
         
         rows = conn.query(sql)
+        
         if rows:
-            out = "%-30s %-30s %s %s\n" % ("Recipient","Sender","Policy", "Priority")
-            out += "%s %s %s %s\n" % ("------------------------------","------------------------------","------","--------")
+            if silent:
+                list = []
+            else:
+                out = "%-30s %-30s %s %s\n" % ("Recipient","Sender","Policy", "Priority")
+                out += "%s %s %s %s\n" % ("------------------------------","------------------------------","------","--------")
             for row in rows:
-                out += "%-30s %-30s %+6s %+8s\n" % (row.recipient, row.sender, row.policy, row.priority)
-            out += "\nFound %d instances." % len(rows)
+                if silent:
+                    list.append(row)
+                else:            
+                    out += "%-30s %-30s %+6s %+8s\n" % (row.recipient, row.sender, row.policy, row.priority)
+            if not silent:
+                out += "\nFound %d instances." % len(rows)
         else:
-            out = "Nothing to show"
+            if silent:
+                list = []
+            else:
+                out = "Nothing to show"
         
         if not silent:
             print out
-        
-        return out
+        else:
+            return list
     except:
         raise
