@@ -35,6 +35,9 @@ import os
 import sys
 import logging
 import getopt
+import web
+
+web.config.debug = False
 
 os.environ['LC_ALL'] = 'C'
 
