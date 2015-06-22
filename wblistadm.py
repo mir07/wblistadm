@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Author: Zhang Huangbin <zhb@iredmail.org>
 # Author: Michael Rasmussen <mir@datanom.net>
 
