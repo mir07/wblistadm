@@ -19,13 +19,15 @@ def createResponse(web, data, status = None):
         if not status:
             if data == None:
                 web.ctx.status = '204 NoContent'
-                result = None
             else:
                 web.ctx.status = '200 OK'
-                if data:
-                    result = "{'data': %s}" % json.dumps(data)
-                else:
-                    result = None
+        if data == None:
+            result = None
+        else:
+            if data:
+                result = "{'data': %s}" % json.dumps(data)
+            else:
+                result = None
 
     return result
 
