@@ -3,16 +3,19 @@ import web
 import json
 import sys
 import os
+import signal
+import pwd
 import logging
 from web.wsgiserver import CherryPyWSGIServer
 import libs.wblistadm_utils as wb
 from libs.utils import *
 from libs.auth import *
+from libs import daemon
 
 os.environ['LC_ALL'] = 'C'
 
-rootdir = os.path.abspath(os.path.dirname(__file__)) + '/../'
-sys.path.insert(0, rootdir)
+rootdir = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, rootdir + '/libs')
 
 urls = (
     '/ticket', 'Ticket', 
@@ -26,7 +29,13 @@ urls = (
 )
 
 authCookie = 'WBAuthCookie'
-        
+
+USAGE = """%s [options]
+options:
+    -f|--forground  Run in forground (do not daemonize)
+    -h|--help       Show help
+""" % (os.path.basename(__file__))
+
 def notfound():
     web.header('Content-Type', 'application/json')
     return web.notfound(json.dumps({'ok': 0, 'errcode': 404}))
@@ -70,7 +79,10 @@ class ShowList:
         wbauth = Cookie(web.cookies().get(authCookie))
         if not wbauth:
             return unauthorized()
-        if not session.ticket['ticket'] == wbauth.ticket:
+        try:
+            if not session.ticket['ticket'] == wbauth.ticket:
+                return unauthorized()
+        except AttributeError:
             return unauthorized()
         logging.info("showList (GET): %s %s %s" % (function, identifier,  wbauth))
         if not validateCSRFToken(web.ctx.env, session):
@@ -94,7 +106,10 @@ class AddList:
         wbauth = Cookie(web.cookies().get(authCookie))
         if not wbauth:
             return unauthorized()
-        if not session.ticket['ticket'] == wbauth.ticket:
+        try:
+            if not session.ticket['ticket'] == wbauth.ticket:
+                return unauthorized()
+        except AttributeError:
             return unauthorized()
         if not validateCSRFToken(web.ctx.env, session):
             return unauthorized()
@@ -121,7 +136,10 @@ class DeleteList:
         wbauth = Cookie(web.cookies().get(authCookie))
         if not wbauth:
             return unauthorized()
-        if not session.ticket['ticket'] == wbauth.ticket:
+        try:
+            if not session.ticket['ticket'] == wbauth.ticket:
+                return unauthorized()
+        except AttributeError:
             return unauthorized()
         if not validateCSRFToken(web.ctx.env, session):
             return unauthorized()
@@ -163,10 +181,15 @@ class Logger(object):
         if not message == '\n':
             logging.info(message)
 
-if __name__ == "__main__":
+def main(daemonize = True):
+    os.umask(0077)
+    
     config = parseSettings()
     web.config._config = config
 
+    handler = SignalHandler(config['pid_file'])
+    signal.signal(signal.SIGTERM, handler.signal_term_handler)
+    
     if config['log_file'] == 'stderr':
         logging.basicConfig(level=config['log_level'],
                             format='* [%(asctime)s] %(message)s',
@@ -177,7 +200,7 @@ if __name__ == "__main__":
                             format='* [%(asctime)s] %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S', 
                             filename=config['log_file'])
-    sys.stderr = Logger()
+    #sys.stderr = Logger()
 
     if config['ssl_certificate'] and config['ssl_private_key']:
         CherryPyWSGIServer.ssl_certificate = config['ssl_certificate']
@@ -185,6 +208,25 @@ if __name__ == "__main__":
         logging.info('Found certificate and key. Enabling HTTPS')
     else:
         logging.info('Certificate and key not found. Disabling HTTPS')
+
+    if daemonize:
+        try:
+            daemon.daemonize(noClose=False)
+        except Exception, e:
+            logging.error('Error in daemon.daemonize: ' + str(e))
+            print "Fork failed: %s" % str(e)
+            sys.exit(1)
+
+        # Run as a low privileged user.
+        uid = pwd.getpwnam(config['user'])[2]
+    
+        # Write pid number into pid file.
+        f = open(config['pid_file'], 'w')
+        f.write(str(os.getpid()))
+        f.close()
+    
+        # Set uid.
+        os.setuid(uid)
 
     app = Server(urls, globals())
     if config['debug']:
@@ -194,8 +236,10 @@ if __name__ == "__main__":
         web.config.debug = False
         app.internalerror = internalerror
     app.notfound = notfound
+    
     if web.config.get('_session') is None:
-        session = web.session.Session(app, web.session.DiskStore(config['session_dir']))
+        session_file = rootdir + '/' + config['session_dir']
+        session = web.session.Session(app, web.session.DiskStore(session_file))
         web.config._session = session
     else:
         session = web.config._session
@@ -203,5 +247,31 @@ if __name__ == "__main__":
     rt = RepeatedTimer(5*60, cleanSessionsFiles, config['session_timeout'], config['session_dir'])
     try:
         app.run(listen = config['listen'], port = config['port'])
+    except KeyboardInterrupt:
+        pass
+    except Exception, e:
+        logging.error('Error in application loop: ' + str(e))
     finally:
+        handler.remove_file()
         rt.stop()
+
+if __name__ == "__main__":
+    argc = len(sys.argv)
+    if argc > 2:
+        print "Error: To many arguments"
+        print USAGE
+        sys.exit(1)
+    elif argc == 2:
+        opt = sys.argv[(argc-1)]
+        if opt == '-h' or opt == '--help':
+            print USAGE
+            sys.exit()
+        elif opt == '-f' or opt == '--forground':
+            daemonize = False
+        else:
+            print "%s: Unknown argument" % opt.lstrip('-')
+            print USAGE
+            sys.exit(1)
+    else:
+        daemonize = True
+    main(daemonize)

@@ -1,4 +1,5 @@
 import os
+import pwd
 import time
 import json
 import server_settings as settings
@@ -78,6 +79,15 @@ def parseSettings():
         config['session_dir'] = settings.session_dir
     except AttributeError:
         config['session_dir'] = 'sessions'
+    try:
+        config['user'] = settings.user
+    except AttributeError:
+        config['user'] = pwd.getpwuid(os.getuid())[0]
+    try:
+        config['pid_file'] = settings.pid_file
+    except AttributeError:
+        cwd = os.path.abspath(os.path.dirname(__file__)) + '/../'
+        config['pid_file'] = cwd + 'wb-server.pid'
 
     return config
     
@@ -137,3 +147,20 @@ class RepeatedTimer(object):
     def stop(self):
         self._timer.cancel()
         self.is_running = False
+
+class SignalHandler(object):
+    def __init__(self, path):
+        self.path = path
+    
+    def remove_file(self):
+        try:
+            os.unlink(self.path)
+            logging.info('Deleted pid file: %s' % self.path)
+        except OSError, e:
+            logging.warning('Could not delete pid file: ' + str(e))
+            pass
+        finally:
+            os._exit(0)
+        
+    def signal_term_handler(self, signal, frame):
+        self.remove_file()

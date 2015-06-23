@@ -1,3 +1,11 @@
+# run as this user
+# Default is to use current user
+#user = 'nobody'
+
+# pid file
+# Default is wb-server.pid
+#pid_file = 'wb-server.pid'
+
 # run webpy in debug mode
 debug = False
 
@@ -11,7 +19,7 @@ debug = False
 # warning = 2
 # error = 3
 # default = 2
-#log_level = 2
+log_level = 0
 
 # stderr or specify filename with full path
 # default is stderr
