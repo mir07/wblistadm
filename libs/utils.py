@@ -78,7 +78,8 @@ def parseSettings():
     try:
         config['session_dir'] = settings.session_dir
     except AttributeError:
-        config['session_dir'] = 'sessions'
+        cwd = os.path.abspath(os.path.dirname(__file__)) + '/../'
+        config['session_dir'] = cwd + 'sessions'
     try:
         config['user'] = settings.user
     except AttributeError:

@@ -238,7 +238,7 @@ def main(daemonize = True):
     app.notfound = notfound
     
     if web.config.get('_session') is None:
-        session_file = rootdir + '/' + config['session_dir']
+        session_file = config['session_dir']
         session = web.session.Session(app, web.session.DiskStore(session_file))
         web.config._session = session
     else:
