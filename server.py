@@ -196,15 +196,24 @@ def main(daemonize = True):
                             datefmt='%Y-%m-%d %H:%M:%S', 
                             stream=sys.stderr)
     else:
+        log = config['log_file']
+        if not log.startswith('/'):
+            log = rootdir + '/' + log
         logging.basicConfig(level=logging.DEBUG,
                             format='* [%(asctime)s] %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S', 
-                            filename=config['log_file'])
+                            filename=log)
     #sys.stderr = Logger()
 
     if config['ssl_certificate'] and config['ssl_private_key']:
-        CherryPyWSGIServer.ssl_certificate = config['ssl_certificate']
-        CherryPyWSGIServer.ssl_private_key = config['ssl_private_key']
+        certificate = config['ssl_certificate']
+        if not certificate.startswith('/'):
+            certificate = rootdir + '/' + certificate
+        key = config['ssl_private_key']
+        if not key.startswith('/'):
+            key = rootdir + '/' + key
+        CherryPyWSGIServer.ssl_certificate = certificate
+        CherryPyWSGIServer.ssl_private_key = key
         logging.info('Found certificate and key. Enabling HTTPS')
     else:
         logging.info('Certificate and key not found. Disabling HTTPS')
